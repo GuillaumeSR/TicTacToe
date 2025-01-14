@@ -13,7 +13,7 @@ function App() {
 
   return (
     <>
-      <div className='flex flex-col justify-between h-screen'>
+      <div className='flex flex-col justify-between h-screen bg-gray-800'>
         <Header/>
         <Outlet/>
         <Footer/>
