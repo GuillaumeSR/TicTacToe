@@ -7,6 +7,8 @@ import { createBrowserRouter, RouterProvider } from 'react-router-dom'
 import Home from './pages/home.tsx'
 import Game from './pages/game.tsx'
 import Leaderboard from './pages/leaderboard.tsx'
+import PlayerCpu from './pages/player-cpu.tsx'
+import AskPseudo from './pages/ask-pseudo.tsx'
 
 const router = createBrowserRouter([
   {
@@ -24,6 +26,14 @@ const router = createBrowserRouter([
       {
         path: "/leaderboard",
         element: <Leaderboard/>
+      },
+      {
+        path: "/player-cpu",
+        element: <PlayerCpu/>
+      },
+      {
+        path: "/ask-pseudo",
+        element: <AskPseudo/>
       },
     ]
   }

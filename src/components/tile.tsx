@@ -4,7 +4,7 @@ const Tile = ({ value, onTileClick }: {value: string, onTileClick: React.MouseEv
   
   return (
     <div>
-      <button onClick={onTileClick} className="px-4 py-2 font-bold text-white bg-gray-700 border-b-4 border-gray-900 rounded-lg h-28 w-28 hover:bg-gray-600 hover:border-gray-700">
+      <button onClick={onTileClick} className="px-4 py-2 font-bold text-white bg-[#284551] border-b-8 border-[#132C36] rounded-2xl h-28 w-28 hover:bg-[#B6CAD3] hover:border-[#7D9AA7]">
         <img src={value} alt="" className="icon"/>
       </button>
     </div>

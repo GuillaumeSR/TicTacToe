@@ -24,12 +24,28 @@ const Board = () => {
     setXIsNext(!xIsNext);
   };
 
+  const draw = calculateDraw(tiles);
   const winner = calculateWinner(tiles);
+  let drawCount: number = 0;
+  let XWinCount: number = 0;
+  let OWinCount: number = 0;
   let status;
   let statusValue;
-  if (winner) {
-    status = "Winner";
-    statusValue = (xIsNext ? circleStatus : crossStatus);
+
+  if (winner || draw) {
+    if (draw) {
+      drawCount += 1;
+      status = "Draw"
+      statusValue = "";
+    } else {
+      if (xIsNext) {
+        OWinCount += 1;
+      } else {
+        XWinCount += 1;
+      }
+      status = "Winner";
+      statusValue = (xIsNext ? circleStatus : crossStatus);
+    }
   } else {
     status = "Turn";
     statusValue = (xIsNext ? crossStatus : circleStatus);
@@ -37,7 +53,15 @@ const Board = () => {
 
   return (
     <>
-      <div className="flex justify-center uppercase status text-neutral-400 "><img src={statusValue} alt="" className="w-8 h-8 icon"/><div><span className="inline-block align-middle">{status}</span></div></div>
+      <div className="flex justify-center">
+        <div className="flex justify-center uppercase status px-4 py-2 text-sm text-center text-[#B6CAD3] bg-[#284551] mx-auto border-b-8 rounded-2xl border-[#132C36]">
+          <img src={statusValue} className="w-8 h-8 icon"/>
+          <div className="px-5 py-1">
+            <span className="inline-block align-middle">{status}</span>
+          </div>
+        </div>
+      </div>
+      
       <div className="flex justify-center">
         <div className="grid grid-cols-3 gap-x-8 gap-y-8">
           <Tile value={tiles[0]} onTileClick={() => handleClick(0)}/>
@@ -51,9 +75,46 @@ const Board = () => {
           <Tile value={tiles[8]} onTileClick={() => handleClick(8)}/>
         </div>
       </div>
+      <div className="flex justify-center">
+        <div className="grid grid-cols-3 gap-x-8 gap-y-8">
+          <div className="overflow-hidden bg-[#36CDCA] rounded-2xl shadow-lg px-4">
+            <div className="px-2 py-2">
+              <div className="text-xl font-bold">X (joueur 1)</div>
+            </div>
+            <div className="px-2">
+              <span className="inline-block px-3 py-1 mb-2 mx-2 text-sm font-semibold text-[#203741]">{XWinCount}</span>
+            </div>
+          </div>
+          <div className="overflow-hidden bg-[#B6CAD3] rounded-2xl shadow-lg px-4">
+            <div className="px-2 py-2">
+              <div className="text-xl font-bold">Égalité</div>
+            </div>
+            <div className="px-2">
+              <span className="inline-block px-3 py-1 mb-2 mx-2 text-sm font-semibold text-[#203741]">{drawCount}</span>
+            </div>
+          </div>
+          <div className="overflow-hidden rounded-2xl shadow-lg bg-[#F6BC47] px-4">
+            <div className="px-2 py-2">
+              <div className="text-xl font-bold">O (joueur 2)</div>
+            </div>
+            <div className="px-2">
+              <span className="inline-block px-3 py-1 mb-2 mx-2 text-sm font-semibold text-[#203741]">{OWinCount}</span>
+            </div>
+          </div>
+        </div>
+      </div>
     </>
   );
 };
+
+function calculateDraw(tiles: number[]) {
+  for (let i = 0; i < tiles.length; i++) {
+    if (tiles[i] === null) {
+      return null;
+    };
+  };
+  return true;
+}
 
 function calculateWinner(tiles: number[]) {
   const lines = [
