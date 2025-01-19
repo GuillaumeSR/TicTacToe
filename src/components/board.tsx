@@ -4,7 +4,7 @@ import cross from "../assets/cross.svg";
 import crossStatus from "../assets/cross.webp"
 import circle from "../assets/circle.svg";
 import circleStatus from "../assets/circle.webp"
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 
 interface BoardProps {
   isCpuMode: boolean;
@@ -13,33 +13,13 @@ interface BoardProps {
 const Board: React.FC<BoardProps> = ({ isCpuMode }) => {
   const [xIsNext, setXIsNext] = useState(true);
   const [tiles, setTiles] = useState(Array(9).fill(null));
-  const [isCpuTurn, setIsCpuTurn] = useState(false);
+  const [, setIsCpuTurn] = useState(false);
   const [winCounts, setWinCounts] = useState({ player1: 0, cpu: 0, draw: 0 })
   
   const draw = calculateDraw(tiles);
   const winner = calculateWinner(tiles);
 
-  useEffect(() => {
-    if (isCpuMode && !xIsNext && !winner && !draw) {
-      setIsCpuTurn(true);
-      const timer = setTimeout(() => {
-        handleCpuMove();
-        setIsCpuTurn(false);
-      }, 500);
-      return () => clearTimeout(timer);
-    }
-  }, [xIsNext, tiles, winner, draw, isCpuMode]);
-  
-  const handleClick = (i: number) => {
-    if (tiles[i] || calculateWinner(tiles) || (isCpuMode && !xIsNext)) return;
-    
-    const nextTiles = [...tiles];
-    nextTiles[i] = xIsNext ? cross : circle;
-    setTiles(nextTiles);
-    setXIsNext(!xIsNext);
-  };
-
-  const handleCpuMove = () => {
+  const handleCpuMove = useCallback(() => {
     const emptyTiles = tiles
       .map((tile, index) => (tile === null ? index : null))
       .filter((index) => index !== null);
@@ -52,6 +32,26 @@ const Board: React.FC<BoardProps> = ({ isCpuMode }) => {
     nextTiles[tileIndex as number] = circle;
     setTiles(nextTiles);
     setXIsNext(true);
+  }, [tiles]);
+
+  useEffect(() => {
+    if (isCpuMode && !xIsNext && !winner && !draw) {
+      setIsCpuTurn(true);
+      const timer = setTimeout(() => {
+        handleCpuMove();
+        setIsCpuTurn(false);
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [xIsNext, tiles, winner, draw, isCpuMode, handleCpuMove]);
+  
+  const handleClick = (i: number) => {
+    if (tiles[i] || calculateWinner(tiles) || (isCpuMode && !xIsNext)) return;
+    
+    const nextTiles = [...tiles];
+    nextTiles[i] = xIsNext ? cross : circle;
+    setTiles(nextTiles);
+    setXIsNext(!xIsNext);
   };
 
   const resetBoard = () => {
@@ -61,15 +61,17 @@ const Board: React.FC<BoardProps> = ({ isCpuMode }) => {
 
   useEffect(() => {
     if (winner || draw) {
-      const newCounts = { ...winCounts };
-      if (winner === cross) {
-        newCounts.player1 += 1;
-      } else if (winner === circle) {
-        newCounts.cpu += 1;
-      } else if (draw) {
-        newCounts.draw += 1;
-      }
-      setWinCounts(newCounts);
+      setWinCounts((prevCounts) => {
+        const newCounts = { ...prevCounts };
+        if (winner === cross) {
+          newCounts.player1 += 1;
+        } else if (winner === circle) {
+          newCounts.cpu += 1;
+        } else if (draw) {
+          newCounts.draw += 1;
+        }
+        return newCounts;
+      });
     }
   }, [winner, draw]);
 
@@ -153,7 +155,7 @@ function calculateDraw(tiles: number[]) {
   return true;
 }
 
-function calculateWinner(tiles: number[]) {
+function calculateWinner(tiles: (string | null)[]): string | null {
   const lines = [
     [0, 1, 2],
     [3, 4, 5],
