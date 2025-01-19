@@ -14,10 +14,14 @@ const Board: React.FC<BoardProps> = ({ isCpuMode }) => {
   const [xIsNext, setXIsNext] = useState(true);
   const [tiles, setTiles] = useState(Array(9).fill(null));
   const [, setIsCpuTurn] = useState(false);
-  const [winCounts, setWinCounts] = useState({ player1: 0, cpu: 0, draw: 0 })
-  
-  const draw = calculateDraw(tiles);
+  const [playerName, setPlayerName] = useState("")
+  const [streak, setStreak] = useState(0);
+  const [winCounts, setWinCounts] = useState({ player1: 0, cpu: 0, draw: 0 });
+  const [winnerOrDrawProcessed, setWinnerOrDrawProcessed] = useState(false);
+  const [streakSaved, setStreakSaved] = useState(false);
+
   const winner = calculateWinner(tiles);
+  const draw = calculateDraw(tiles);
 
   const handleCpuMove = useCallback(() => {
     const emptyTiles = tiles
@@ -33,6 +37,16 @@ const Board: React.FC<BoardProps> = ({ isCpuMode }) => {
     setTiles(nextTiles);
     setXIsNext(true);
   }, [tiles]);
+
+  useEffect(() => {
+    if (isCpuMode && playerName === "") {
+      const name = prompt("Enter your name :");
+      if (name) {
+        setPlayerName(name);
+        localStorage.setItem("playerName", name);
+      }
+    }
+  }, [isCpuMode, playerName]);
 
   useEffect(() => {
     if (isCpuMode && !xIsNext && !winner && !draw) {
@@ -57,23 +71,47 @@ const Board: React.FC<BoardProps> = ({ isCpuMode }) => {
   const resetBoard = () => {
     setTiles(Array(9).fill(null));
     setXIsNext(true);
+    setWinnerOrDrawProcessed(false);
+    setStreakSaved(false);
   }
-
+  
+  const saveStreak = useCallback((streak: number) => {
+    if (streak > 0 && !streakSaved) {
+      const leaderboard = JSON.parse(localStorage.getItem("leaderboard") || "[]");
+      leaderboard.push({ name: playerName, streak });
+      leaderboard.sort((a: { streak: number; }, b: { streak: number; }) => b.streak - a.streak);
+      localStorage.setItem("leaderboard", JSON.stringify(leaderboard));
+      setStreakSaved(true);
+    }
+  },[playerName, streakSaved]);
+  
   useEffect(() => {
-    if (winner || draw) {
+    if ((winner || draw) && !winnerOrDrawProcessed) {
       setWinCounts((prevCounts) => {
         const newCounts = { ...prevCounts };
         if (winner === cross) {
           newCounts.player1 += 1;
+          if (isCpuMode) {
+            setStreak((prev) => prev + 1);
+          }
         } else if (winner === circle) {
           newCounts.cpu += 1;
+          if (isCpuMode) {
+            saveStreak(streak);
+            setStreak(0);
+          }
         } else if (draw) {
           newCounts.draw += 1;
+          if (isCpuMode) {
+            saveStreak(streak);
+            setStreak(0);
+          }
         }
         return newCounts;
       });
+      setWinnerOrDrawProcessed(true);
     }
-  }, [winner, draw]);
+  }, [winner, draw, playerName, streak, isCpuMode, saveStreak, winnerOrDrawProcessed]);
 
   let status: string;
   let statusValue: string;
@@ -147,12 +185,7 @@ const Board: React.FC<BoardProps> = ({ isCpuMode }) => {
 };
 
 function calculateDraw(tiles: number[]) {
-  for (let i = 0; i < tiles.length; i++) {
-    if (tiles[i] === null) {
-      return null;
-    };
-  };
-  return true;
+  return tiles.every((tile) => tile !== null);
 }
 
 function calculateWinner(tiles: (string | null)[]): string | null {
