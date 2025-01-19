@@ -14,11 +14,10 @@ const Board: React.FC<BoardProps> = ({ isCpuMode }) => {
   const [xIsNext, setXIsNext] = useState(true);
   const [tiles, setTiles] = useState(Array(9).fill(null));
   const [isCpuTurn, setIsCpuTurn] = useState(false);
+  const [winCounts, setWinCounts] = useState({ player1: 0, cpu: 0, draw: 0 })
   
   const draw = calculateDraw(tiles);
   const winner = calculateWinner(tiles);
-  let status: string;
-  let statusValue: string;
 
   useEffect(() => {
     if (isCpuMode && !xIsNext && !winner && !draw) {
@@ -34,7 +33,7 @@ const Board: React.FC<BoardProps> = ({ isCpuMode }) => {
   const handleClick = (i: number) => {
     if (tiles[i] || calculateWinner(tiles) || (isCpuMode && !xIsNext)) return;
     
-    const nextTiles = tiles.slice();
+    const nextTiles = [...tiles];
     nextTiles[i] = xIsNext ? cross : circle;
     setTiles(nextTiles);
     setXIsNext(!xIsNext);
@@ -49,81 +48,94 @@ const Board: React.FC<BoardProps> = ({ isCpuMode }) => {
     
     const randomIndex = Math.floor(Math.random() * emptyTiles.length);
     const tileIndex = emptyTiles[randomIndex as number];
-    const nextTiles = tiles.slice();
+    const nextTiles = [...tiles];
     nextTiles[tileIndex as number] = circle;
     setTiles(nextTiles);
     setXIsNext(true);
+  };
+
+  const resetBoard = () => {
+    setTiles(Array(9).fill(null));
+    setXIsNext(true);
   }
 
-  let drawCount: number = 0;
-  let XWinCount: number = 0;
-  let OWinCount: number = 0;
-
-  if (winner || draw) {
-    if (draw) {
-      drawCount += 1;
-      status = "Draw"
-      statusValue = "";
-    } else {
-      if (xIsNext) {
-        OWinCount += 1;
-      } else {
-        XWinCount += 1;
+  useEffect(() => {
+    if (winner || draw) {
+      const newCounts = { ...winCounts };
+      if (winner === cross) {
+        newCounts.player1 += 1;
+      } else if (winner === circle) {
+        newCounts.cpu += 1;
+      } else if (draw) {
+        newCounts.draw += 1;
       }
-      status = "Winner";
-      statusValue = (xIsNext ? circleStatus : crossStatus);
+      setWinCounts(newCounts);
     }
+  }, [winner, draw]);
+
+  let status: string;
+  let statusValue: string;
+
+  if (winner) {
+    status = "Winner";
+    statusValue = winner === cross ? crossStatus : circleStatus;
+  } else if (draw) {
+    status = "Draw";
+    statusValue = "";
   } else {
     status = "Turn";
-    statusValue = (xIsNext ? crossStatus : circleStatus);
+    statusValue = xIsNext ? crossStatus : circleStatus;
   }
 
   return (
     <>
       <div className="flex justify-center">
-        <div className="flex justify-center uppercase status px-4 py-2 text-sm text-center text-[#B6CAD3] bg-[#284551] mx-auto border-b-8 rounded-2xl border-[#132C36]">
-          <img src={statusValue} className="w-8 h-8 icon"/>
-          <div className="px-5 py-1">
-            <span className="inline-block align-middle">{status}</span>
+        <div className="grid grid-cols-2 gap-x-8 gap-y-4">
+          <div className="flex justify-center uppercase status px-4 py-2 text-sm text-center text-[#B6CAD3] bg-[#284551] mx-auto border-b-8 rounded-2xl border-[#132C36]">
+            {statusValue && <img src={statusValue} className="w-8 h-8 icon"/>}
+            <div className="px-5 py-1">
+              <span className="inline-block align-middle">{status}</span>
+            </div>
+          </div>
+          <div className="flex justify-center px-4 mx-auto">
+            <button onClick={resetBoard} className="px-4 py-2 bg-[#36CDCA] text-[#203741] rounded-lg hover:bg-[#28B0B0] transition">Reset Board</button>
           </div>
         </div>
+        
       </div>
       
       <div className="flex justify-center">
         <div className="grid grid-cols-3 gap-x-8 gap-y-8">
           {tiles.map((tile, index) => (
-            <Tile
-              key={index}
-              value={tile}
-              onTileClick={() => handleClick(index)}
-            />
+            <Tile key={index} value={tile} onTileClick={() => handleClick(index)} />
           ))}
         </div>
       </div>
+      
       <div className="flex justify-center">
         <div className="grid grid-cols-3 gap-x-8 gap-y-8">
           <div className="overflow-hidden bg-[#36CDCA] rounded-2xl shadow-lg px-4">
             <div className="px-2 py-2">
-              <div className="text-xl font-bold">X (joueur 1)</div>
+              <div className="text-xl font-bold">Player 1 (X)</div>
             </div>
             <div className="px-2">
-              <span className="inline-block px-3 py-1 mb-2 mx-2 text-sm font-semibold text-[#203741]">{XWinCount}</span>
+              <span className="inline-block px-3 py-1 mb-2 mx-2 text-sm font-semibold text-[#203741]">{winCounts.player1}</span>
             </div>
           </div>
           <div className="overflow-hidden bg-[#B6CAD3] rounded-2xl shadow-lg px-4">
             <div className="px-2 py-2">
-              <div className="text-xl font-bold">Égalité</div>
+              <div className="text-xl font-bold">Draws</div>
             </div>
             <div className="px-2">
-              <span className="inline-block px-3 py-1 mb-2 mx-2 text-sm font-semibold text-[#203741]">{drawCount}</span>
+              <span className="inline-block px-3 py-1 mb-2 mx-2 text-sm font-semibold text-[#203741]">{winCounts.draw}</span>
             </div>
           </div>
           <div className="overflow-hidden rounded-2xl shadow-lg bg-[#F6BC47] px-4">
             <div className="px-2 py-2">
-              <div className="text-xl font-bold">O (joueur 2)</div>
+              <div className="text-xl font-bold">{isCpuMode ? "CPU" : "Player 2 (O)"}</div>
             </div>
             <div className="px-2">
-              <span className="inline-block px-3 py-1 mb-2 mx-2 text-sm font-semibold text-[#203741]">{OWinCount}</span>
+              <span className="inline-block px-3 py-1 mb-2 mx-2 text-sm font-semibold text-[#203741]">{winCounts.cpu}</span>
             </div>
           </div>
         </div>
@@ -152,8 +164,7 @@ function calculateWinner(tiles: number[]) {
     [0, 4, 8],
     [2, 4, 6]
   ];
-  for (let i = 0; i < lines.length; i++) {
-    const [a, b, c] = lines[i];
+  for (const [a, b, c] of lines) {
     if (tiles[a] && tiles[a] === tiles[b] && tiles[a] === tiles[c]) {
       return tiles[a];
     }
