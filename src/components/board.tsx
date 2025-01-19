@@ -4,33 +4,60 @@ import cross from "../assets/cross.svg";
 import crossStatus from "../assets/cross.webp"
 import circle from "../assets/circle.svg";
 import circleStatus from "../assets/circle.webp"
-import { useState } from "react";
+import React, { useState, useEffect } from "react";
 
-const Board = () => {
+interface BoardProps {
+  isCpuMode: boolean;
+}
+
+const Board: React.FC<BoardProps> = ({ isCpuMode }) => {
   const [xIsNext, setXIsNext] = useState(true);
   const [tiles, setTiles] = useState(Array(9).fill(null));
+  const [isCpuTurn, setIsCpuTurn] = useState(false);
+  
+  const draw = calculateDraw(tiles);
+  const winner = calculateWinner(tiles);
+  let status: string;
+  let statusValue: string;
 
-  function handleClick(i: number) {
-    if (tiles[i] || calculateWinner(tiles)) {
-      return;
+  useEffect(() => {
+    if (isCpuMode && !xIsNext && !winner && !draw) {
+      setIsCpuTurn(true);
+      const timer = setTimeout(() => {
+        handleCpuMove();
+        setIsCpuTurn(false);
+      }, 500);
+      return () => clearTimeout(timer);
     }
+  }, [xIsNext, tiles, winner, draw, isCpuMode]);
+  
+  const handleClick = (i: number) => {
+    if (tiles[i] || calculateWinner(tiles) || (isCpuMode && !xIsNext)) return;
+    
     const nextTiles = tiles.slice();
-    if (xIsNext) {
-      nextTiles[i] = cross;
-    } else {
-      nextTiles[i] = circle;
-    }
+    nextTiles[i] = xIsNext ? cross : circle;
     setTiles(nextTiles);
     setXIsNext(!xIsNext);
   };
 
-  const draw = calculateDraw(tiles);
-  const winner = calculateWinner(tiles);
+  const handleCpuMove = () => {
+    const emptyTiles = tiles
+      .map((tile, index) => (tile === null ? index : null))
+      .filter((index) => index !== null);
+    
+    if (emptyTiles.length === 0) return;
+    
+    const randomIndex = Math.floor(Math.random() * emptyTiles.length);
+    const tileIndex = emptyTiles[randomIndex as number];
+    const nextTiles = tiles.slice();
+    nextTiles[tileIndex as number] = circle;
+    setTiles(nextTiles);
+    setXIsNext(true);
+  }
+
   let drawCount: number = 0;
   let XWinCount: number = 0;
   let OWinCount: number = 0;
-  let status;
-  let statusValue;
 
   if (winner || draw) {
     if (draw) {
@@ -64,15 +91,13 @@ const Board = () => {
       
       <div className="flex justify-center">
         <div className="grid grid-cols-3 gap-x-8 gap-y-8">
-          <Tile value={tiles[0]} onTileClick={() => handleClick(0)}/>
-          <Tile value={tiles[1]} onTileClick={() => handleClick(1)}/>
-          <Tile value={tiles[2]} onTileClick={() => handleClick(2)}/>
-          <Tile value={tiles[3]} onTileClick={() => handleClick(3)}/>
-          <Tile value={tiles[4]} onTileClick={() => handleClick(4)}/>
-          <Tile value={tiles[5]} onTileClick={() => handleClick(5)}/>
-          <Tile value={tiles[6]} onTileClick={() => handleClick(6)}/>
-          <Tile value={tiles[7]} onTileClick={() => handleClick(7)}/>
-          <Tile value={tiles[8]} onTileClick={() => handleClick(8)}/>
+          {tiles.map((tile, index) => (
+            <Tile
+              key={index}
+              value={tile}
+              onTileClick={() => handleClick(index)}
+            />
+          ))}
         </div>
       </div>
       <div className="flex justify-center">
